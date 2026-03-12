@@ -4,7 +4,7 @@
   "description": "Smart Continuous Faculty Performance Evaluation System using MERN Stack and LLM",
   "license": "ISC",
   "author": "Omprakash Maurya",
-  "type": "module",
+  "type": "commonjs",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
