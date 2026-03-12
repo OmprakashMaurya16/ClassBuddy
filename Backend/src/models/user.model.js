@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema(
   {
     fullName: {
       type: String,
-      required: [true, "Please provide your full name"],
+      required: true,
       trim: true,
       minlength: [3, "Full name must be at least 3 characters long"],
       maxlength: [50, "Full name must be less than 50 characters long"],
@@ -13,7 +13,7 @@ const userSchema = new mongoose.Schema(
 
     email: {
       type: String,
-      required: [true, "Please provide your email"],
+      required: true,
       unique: true,
       lowercase: true,
       match: [/\S+@\S+\.\S+/, "Please provide a valid email address"],
@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema(
 
     password: {
       type: String,
-      required: [true, "Please provide a password"],
+      required: true,
       minlength: [8, "Password must be at least 8 characters long"],
       select: false,
     },

@@ -4,20 +4,20 @@ const subjectSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, "Subject name is required"],
+      required: true,
       trim: true,
     },
 
     code: {
       type: String,
-      required: [true, "Subject code is required"],
+      required: true,
       trim: true,
       uppercase: true,
     },
 
     semester: {
       type: Number,
-      required: [true, "Please select a semester"],
+      required: true,
       min: [1, "Semester must be between 1 and 8"],
       max: [8, "Semester must be between 1 and 8"],
     },
@@ -25,7 +25,7 @@ const subjectSchema = new mongoose.Schema(
     faculty: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: [true, "Please assign a faculty member"],
+      required: true,
     },
   },
   {
