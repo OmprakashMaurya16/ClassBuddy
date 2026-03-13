@@ -22,6 +22,10 @@ app.get("/", (req, res) => {
   });
 });
 
+const userRoutes = require("./routes/user.routes.js");
+
+app.use("/api/users", userRoutes);
+
 app.use((err, req, res, next) => {
   if (err.name === "ApiError") {
     return sendResponse(res, err.statusCode, err.message);

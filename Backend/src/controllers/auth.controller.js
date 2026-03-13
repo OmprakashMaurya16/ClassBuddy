@@ -38,6 +38,7 @@ const login = asyncHandler(async (req, res) => {
 
   const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken(user);
+  user.lastLogin = new Date();
 
   const hashedRefreshToken = crypto
     .createHash("sha256")
@@ -48,13 +49,73 @@ const login = asyncHandler(async (req, res) => {
 
   await user.save();
 
-  sendResponse(res, 200, "Login successful", {
+  return sendResponse(res, 200, "Login successful", {
+    user: {
+      id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      role: user.role,
+      department: user.department,
+    },
     accessToken,
     refreshToken,
   });
+});
 
-  return sendResponse(res, 200, "Login successful", {
-    user,
+const register = asyncHandler(async (req, res) => {
+  const { fullName, email, password, role, department, designation, subjects } =
+    req.body;
+
+  if (!fullName || !email || !password || !role) {
+    throw new ApiError(400, "Full name, email, password and role are required");
+  }
+
+  const existingUser = await User.findOne({ email });
+
+  if (existingUser) {
+    throw new ApiError(409, "Email already in use");
+  }
+
+  if (role === "HOD") {
+    const existingHod = await User.findOne({ role: "HOD", department });
+    if (existingHod) {
+      throw new ApiError(
+        409,
+        `A HOD already exists for the ${department} department`,
+      );
+    }
+  }
+
+  const user = await User.create({
+    fullName,
+    email,
+    password,
+    role,
+    department: role !== "Admin" ? department : null,
+    designation: role !== "Admin" ? designation : null,
+    subjects: role === "Faculty" ? subjects : [],
+  });
+
+  const accessToken = generateAccessToken(user);
+  const refreshToken = generateRefreshToken(user);
+
+  const hashedRefreshToken = crypto
+    .createHash("sha256")
+    .update(refreshToken)
+    .digest("hex");
+
+  user.refreshToken = hashedRefreshToken;
+
+  await user.save();
+
+  return sendResponse(res, 200, "Registration successful", {
+    user: {
+      id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      role: user.role,
+      department: user.department,
+    },
     accessToken,
     refreshToken,
   });
@@ -62,4 +123,5 @@ const login = asyncHandler(async (req, res) => {
 
 module.exports = {
   login,
+  register,
 };
