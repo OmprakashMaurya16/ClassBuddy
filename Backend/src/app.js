@@ -22,9 +22,9 @@ app.get("/", (req, res) => {
   });
 });
 
-const userRoutes = require("./routes/user.routes.js");
+const authRoutes = require("./routes/auth.routes.js");
 
-app.use("/api/users", userRoutes);
+app.use("/api/auth", authRoutes);
 
 app.use((err, req, res, next) => {
   if (err.name === "ApiError") {

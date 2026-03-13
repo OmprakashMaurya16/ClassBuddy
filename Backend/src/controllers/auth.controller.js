@@ -121,7 +121,16 @@ const register = asyncHandler(async (req, res) => {
   });
 });
 
+const logout = asyncHandler(async (req, res) => {
+  await User.findByIdAndUpdate(req.user._id, {
+    $set: { refreshToken: null },
+  });
+
+  return sendResponse(res, 200, "Logged out successfully.");
+});
+
 module.exports = {
   login,
   register,
+  logout,
 };
