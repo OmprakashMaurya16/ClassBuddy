@@ -7,6 +7,8 @@ const {
   generateAccessToken,
   generateRefreshToken,
 } = require("../utils/token.util.js");
+const cookieOptions = require("../utils/cookie.util.js");
+const jwt = require("jsonwebtoken");
 
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
@@ -48,6 +50,8 @@ const login = asyncHandler(async (req, res) => {
   user.refreshToken = hashedRefreshToken;
 
   await user.save();
+
+  res.cookie("refreshToken", refreshToken, cookieOptions);
 
   return sendResponse(res, 200, "Login successful", {
     user: {
@@ -106,6 +110,8 @@ const register = asyncHandler(async (req, res) => {
 
   user.refreshToken = hashedRefreshToken;
 
+  res.cookie("refreshToken", refreshToken, cookieOptions);
+
   await user.save();
 
   return sendResponse(res, 200, "Registration successful", {
@@ -126,11 +132,64 @@ const logout = asyncHandler(async (req, res) => {
     $set: { refreshToken: null },
   });
 
+  res.clearCookie("refreshToken", cookieOptions);
+
   return sendResponse(res, 200, "Logged out successfully.");
+});
+
+const refreshToken = asyncHandler(async (req, res) => {
+  const { refreshToken } = req.cookies;
+
+  if (!refreshToken) {
+    throw new ApiError(401, "No refresh token. Please log in again.");
+  }
+
+  let decoded;
+
+  try {
+    decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+  } catch (error) {
+    console.error("Error verifying refresh token:", error.message);
+  }
+
+  const user = await User.findById(decoded.id).select("+refreshToken");
+
+  if (!user || !user.refreshToken) {
+    throw new ApiError(401, "Invalid refresh token. Please log in again.");
+  }
+
+  const hashedRefreshToken = crypto
+    .createHash("sha256")
+    .update(refreshToken)
+    .digest("hex");
+
+  if (hashedRefreshToken !== user.refreshToken) {
+    throw new ApiError(401, "Invalid refresh token. Please log in again.");
+  }
+
+  const newAccessToken = generateAccessToken(user);
+  const newRefreshToken = generateRefreshToken(user);
+
+  const newHashedRefreshToken = crypto
+    .createHash("sha256")
+    .update(newRefreshToken)
+    .digest("hex");
+
+  user.refreshToken = newHashedRefreshToken;
+
+  await user.save();
+
+  res.cookie("refreshToken", newRefreshToken, cookieOptions);
+
+  return sendResponse(res, 200, "Token refreshed successfully", {
+    accessToken: newAccessToken,
+    refreshToken: newRefreshToken,
+  });
 });
 
 module.exports = {
   login,
   register,
   logout,
+  refreshToken,
 };
