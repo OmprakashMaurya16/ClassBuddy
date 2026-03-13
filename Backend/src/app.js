@@ -1,11 +1,13 @@
 const express = require("express");
 const cors = require("cors");
 const sendResponse = require("./utils/response.helper.js");
+const cookieParser = require("cookie-parser");
 
 const app = express();
 
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
+app.use(cookieParser());
 app.use(
   cors({
     origin: process.env.FRONTEND_URL || "http://localhost:5173",
@@ -21,6 +23,10 @@ app.get("/", (req, res) => {
     message: "Welcome to the backend of ClassBuddy Application",
   });
 });
+
+const authRoutes = require("./routes/auth.routes.js");
+
+app.use("/api/auth", authRoutes);
 
 app.use((err, req, res, next) => {
   if (err.name === "ApiError") {
