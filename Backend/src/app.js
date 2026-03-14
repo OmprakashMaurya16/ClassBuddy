@@ -25,8 +25,10 @@ app.get("/", (req, res) => {
 });
 
 const authRoutes = require("./routes/auth.routes.js");
+const subjectRoutes = require("./routes/subject.routes.js");
 
 app.use("/api/auth", authRoutes);
+app.use("/api/subjects", subjectRoutes);
 
 app.use((err, req, res, next) => {
   if (err.name === "ApiError") {

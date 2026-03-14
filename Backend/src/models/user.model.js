@@ -59,8 +59,9 @@ const userSchema = new mongoose.Schema(
 
     subjects: [
       {
-        type: String,
-        trim: true,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Subject",
+        default: [],
       },
     ],
 
