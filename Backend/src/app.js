@@ -37,7 +37,7 @@ app.use("/api/subjects", subjectRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/feedback", feedbackRoutes);
-app.use("/api/analytics", analyticsRoutes);
+app.use("/api/analytics/faculty", analyticsRoutes);
 
 app.use((err, req, res, next) => {
   if (err.name === "ApiError") {
