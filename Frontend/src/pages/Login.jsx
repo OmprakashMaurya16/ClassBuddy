@@ -2,7 +2,10 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import {
+<<<<<<< HEAD
   GraduationCap,
+=======
+>>>>>>> frontend
   Lock,
   User,
   Eye,
@@ -10,6 +13,10 @@ import {
   AlertCircle,
 } from "lucide-react";
 import Footer from "../components/Footer";
+<<<<<<< HEAD
+=======
+import logo from "../assets/vit.png"
+>>>>>>> frontend
 
 const Login = () => {
   const [role, setRole] = useState("Admin");
@@ -59,6 +66,7 @@ const Login = () => {
       <div className="w-full" style={{ maxWidth: "min(25rem, 75vw)" }}>
         <div className="text-center mb-6">
           <div className="flex justify-center mb-2">
+<<<<<<< HEAD
             <div className="bg-blue-100 p-3 rounded-lg">
               <GraduationCap color="#2563EB" />
             </div>
@@ -66,6 +74,13 @@ const Login = () => {
           
           <h1
             className="font-bold text-gray-800 leading-tight"
+=======
+            <img src={logo} alt="College Logo" className="w-36 h-15 object-cover" />
+          </div>
+          
+          <h1
+            className="font-bold text-[#170a89] leading-tight"
+>>>>>>> frontend
             style={{ fontSize: "clamp(1rem, 2.5vw, 1.25rem)" }}>
             Vidyalankar Institute of Technology
           </h1>
