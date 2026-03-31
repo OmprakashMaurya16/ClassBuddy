@@ -27,10 +27,12 @@ app.get("/", (req, res) => {
 const authRoutes = require("./routes/auth.routes.js");
 const subjectRoutes = require("./routes/subject.routes.js");
 const adminRoutes = require("./routes/admin.routes.js");
+const sessionRoutes = require("./routes/sessions.routes.js");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/subjects", subjectRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/faculty", sessionRoutes);
 
 app.use((err, req, res, next) => {
   if (err.name === "ApiError") {
