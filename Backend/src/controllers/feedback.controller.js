@@ -49,10 +49,24 @@ const submitFeedback = asyncHandler(async (req, res) => {
     "learningOutcomeImpact",
   ];
 
+  const normalizedRating = {};
+
   for (const field of requiredFields) {
-    if (rating?.[field] === undefined) {
+    if (rating?.[field] === undefined || rating?.[field] === null) {
       throw new ApiError(400, "All rating fields required");
     }
+
+    const numericRating = Number(rating[field]);
+
+    if (
+      !Number.isFinite(numericRating) ||
+      numericRating < 1 ||
+      numericRating > 5
+    ) {
+      throw new ApiError(400, `${field} must be a number between 1 and 5`);
+    }
+
+    normalizedRating[field] = numericRating;
   }
 
   const existing = await Feedback.findOne({
@@ -61,22 +75,17 @@ const submitFeedback = asyncHandler(async (req, res) => {
   });
 
   if (existing) {
-    throw new ApiError(409, "Feedback already submitted");
+    throw new ApiError(
+      409,
+      "This roll number has already submitted feedback for this session",
+    );
   }
 
   const mlInput = {
     studentName: studentName.trim().toLowerCase(),
     rollNo: rollNo.trim().toLowerCase(),
     sessionId: String(session._id),
-    ratings: {
-      conceptClarity: rating.conceptClarity,
-      lectureStructure: rating.lectureStructure,
-      subjectMastery: rating.subjectMastery,
-      practicalUnderstanding: rating.practicalUnderstanding,
-      studentEngagement: rating.studentEngagement,
-      lecturePace: rating.lecturePace,
-      learningOutcomeImpact: rating.learningOutcomeImpact,
-    },
+    ratings: normalizedRating,
     remark: remark || "",
   };
 
@@ -85,7 +94,7 @@ const submitFeedback = asyncHandler(async (req, res) => {
     sentiment = await getSentimentFromML(mlInput);
   } catch (error) {
     console.error("ML sentiment failed, using rating fallback:", error.message);
-    sentiment = deriveSentimentFromRating(rating);
+    sentiment = deriveSentimentFromRating(normalizedRating);
   }
 
   await Feedback.create({
@@ -94,7 +103,7 @@ const submitFeedback = asyncHandler(async (req, res) => {
     subject: session.subject,
     studentName: studentName.trim().toLowerCase(),
     rollNo: rollNo.trim().toLowerCase(),
-    rating,
+    rating: normalizedRating,
     sentiment,
     remark: remark || "",
   });

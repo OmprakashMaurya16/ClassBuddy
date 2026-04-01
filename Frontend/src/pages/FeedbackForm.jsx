@@ -71,6 +71,11 @@ const EMPTY_FORM = {
   ratings: EMPTY_RATINGS,
 };
 
+const getSubmissionKey = (token, rollNo) =>
+  `feedback_submitted:${token}:${rollNo.trim().toLowerCase()}`;
+
+const getLastRollKey = (token) => `feedback_last_roll:${token}`;
+
 const validate = (form, token) => {
   const errors = {};
 
@@ -196,7 +201,10 @@ const FeedbackForm = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [alreadySubmitted, setAlreadySubmitted] = useState(false);
   const [apiError, setApiError] = useState("");
+  const [sessionError, setSessionError] = useState("");
+  const [isSessionValid, setIsSessionValid] = useState(false);
   const [sessionMeta, setSessionMeta] = useState({
     facultyName: "",
     subject: "",
@@ -204,9 +212,22 @@ const FeedbackForm = () => {
   const [sessionLoading, setSessionLoading] = useState(true);
 
   useEffect(() => {
+    const lastRoll = sessionStorage.getItem(getLastRollKey(token));
+
+    if (token && lastRoll) {
+      const isSubmitted = sessionStorage.getItem(
+        getSubmissionKey(token, lastRoll),
+      );
+      if (isSubmitted === "1") {
+        setSubmitted(true);
+        setAlreadySubmitted(true);
+      }
+    }
+
     const validateSession = async () => {
       if (!token) {
-        setApiError("Invalid QR link. Please rescan the QR code.");
+        setSessionError("Invalid QR link. Please rescan the QR code.");
+        setIsSessionValid(false);
         setSessionLoading(false);
         return;
       }
@@ -216,7 +237,8 @@ const FeedbackForm = () => {
         const payload = await res.json();
 
         if (!res.ok) {
-          setApiError(payload?.message || "Session is invalid or expired.");
+          setSessionError(payload?.message || "Session is invalid or expired.");
+          setIsSessionValid(false);
           return;
         }
 
@@ -224,8 +246,11 @@ const FeedbackForm = () => {
           facultyName: payload?.data?.faculty?.fullName || "",
           subject: payload?.data?.subject?.name || "",
         });
+        setSessionError("");
+        setIsSessionValid(true);
       } catch {
-        setApiError("Unable to validate QR session. Please try again.");
+        setSessionError("Unable to validate QR session. Please try again.");
+        setIsSessionValid(false);
       } finally {
         setSessionLoading(false);
       }
@@ -249,6 +274,11 @@ const FeedbackForm = () => {
     e.preventDefault();
     setApiError("");
 
+    if (!isSessionValid) {
+      setApiError("Session is invalid or expired. Please rescan the QR code.");
+      return;
+    }
+
     const errs = validate(form, token);
     if (Object.keys(errs).length) {
       setErrors(errs);
@@ -268,6 +298,8 @@ const FeedbackForm = () => {
       remark: form.remarks.trim(),
     };
 
+    const normalizedRoll = form.rollNo.trim().toLowerCase();
+
     try {
       const res = await fetch("/api/feedback/submit", {
         method: "POST",
@@ -277,10 +309,22 @@ const FeedbackForm = () => {
       const data = await res.json();
 
       if (!res.ok) {
+        if (res.status === 409) {
+          sessionStorage.setItem(getSubmissionKey(token, normalizedRoll), "1");
+          sessionStorage.setItem(getLastRollKey(token), normalizedRoll);
+          setSubmitted(true);
+          setAlreadySubmitted(true);
+          return;
+        }
+
         setApiError(data?.message || "Submission failed. Please try again.");
         return;
       }
+
+      sessionStorage.setItem(getSubmissionKey(token, normalizedRoll), "1");
+      sessionStorage.setItem(getLastRollKey(token), normalizedRoll);
       setSubmitted(true);
+      setAlreadySubmitted(false);
     } catch {
       setApiError("Network error. Please check your connection and try again.");
     } finally {
@@ -350,7 +394,7 @@ const FeedbackForm = () => {
                     type="text"
                     value={form.studentName}
                     onChange={(e) => handleInput("studentName", e.target.value)}
-                    placeholder="e.g. Omprakash Maurya"
+                    placeholder="Enter Full Name"
                     className={`w-full pl-10 pr-4 py-3 border rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:border-transparent transition ${
                       errors.studentName
                         ? "border-red-300 focus:ring-red-400"
@@ -425,7 +469,7 @@ const FeedbackForm = () => {
               </div>
             )}
 
-            {(errors.session || apiError) && (
+            {(errors.session || sessionError) && (
               <div className="mt-3 flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
                 <AlertCircle
                   size={15}
@@ -434,7 +478,7 @@ const FeedbackForm = () => {
                 <p
                   className="text-red-600"
                   style={{ fontSize: "clamp(0.72rem, 2.6vw, 0.8rem)" }}>
-                  {errors.session || apiError}
+                  {errors.session || sessionError}
                 </p>
               </div>
             )}
@@ -469,7 +513,7 @@ const FeedbackForm = () => {
             />
           </div>
 
-          {apiError && (
+          {apiError && !sessionError && (
             <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-2xl px-4 py-3.5">
               <AlertCircle size={18} className="text-red-500 shrink-0 mt-0.5" />
               <p
@@ -483,9 +527,8 @@ const FeedbackForm = () => {
           <div className="pb-6">
             <button
               type="submit"
-              disabled={loading || sessionLoading || !token || !!apiError}
-              className="w-full flex items-center justify-center gap-2.5 py-4 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-700 active:scale-[0.98] transition-all shadow-lg shadow-indigo-200 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-              style={{ fontSize: "clamp(0.95rem, 3.5vw, 1.05rem)" }}>
+              disabled={loading || sessionLoading || !isSessionValid}
+              className="w-full flex items-center justify-center gap-2.5 py-4 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-700 active:scale-[0.98] transition-all shadow-lg shadow-indigo-200 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer">
               {loading ? (
                 <>
                   <Loader2 size={18} className="animate-spin" /> Submitting…
@@ -498,7 +541,9 @@ const FeedbackForm = () => {
             <p
               className="text-center text-gray-400 mt-3"
               style={{ fontSize: "clamp(0.68rem, 2.4vw, 0.78rem)" }}>
-              All fields marked as rating are mandatory for final submission.
+              {alreadySubmitted
+                ? "This roll number has already submitted feedback for this session."
+                : "All fields marked as rating are mandatory for final submission."}
             </p>
           </div>
         </form>

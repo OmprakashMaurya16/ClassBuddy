@@ -1,5 +1,15 @@
 const mongoose = require("mongoose");
 
+const RATING_FIELDS = [
+  "conceptClarity",
+  "lectureStructure",
+  "subjectMastery",
+  "practicalUnderstanding",
+  "studentEngagement",
+  "lecturePace",
+  "learningOutcomeImpact",
+];
+
 const ratingSchema = new mongoose.Schema(
   {
     conceptClarity: {
@@ -120,15 +130,16 @@ const feedbackSchema = new mongoose.Schema(
 
 feedbackSchema.index({ session: 1, rollNo: 1 }, { unique: true });
 
-feedbackSchema.pre("validate", function (next) {
-  const values = Object.values(this.rating || {});
+feedbackSchema.pre("validate", function () {
+  const values = RATING_FIELDS.map((field) => Number(this.rating?.[field]));
 
-  if (values.length) {
-    const total = values.reduce((sum, value) => sum + value, 0);
-    this.averageRating = Math.round((total / values.length) * 100) / 100;
+  if (values.some((value) => !Number.isFinite(value))) {
+    this.invalidate("rating", "All rating values must be valid numbers");
+    return;
   }
 
-  next();
+  const total = values.reduce((sum, value) => sum + value, 0);
+  this.averageRating = Math.round((total / values.length) * 100) / 100;
 });
 
 const Feedback = mongoose.model("Feedback", feedbackSchema);
