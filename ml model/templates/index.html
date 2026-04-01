@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Faculty Feedback — ClassEcho</title>
+  <meta name="description" content="Anonymous faculty evaluation form. Rate your instructor and help improve the quality of education." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
+  <script src="{{ url_for('static', filename='js/form.js') }}" defer></script>
+</head>
+<body>
+
+<div class="wrapper">
+
+  <!-- ── BERT Status Badge ───────────────────────────────────────────── -->
+  <div id="bert-status">
+    <span class="dot"></span>
+    <span class="dot-label">Loading BERT model…</span>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       FEEDBACK FORM CARD
+  ═══════════════════════════════════════════════════════════════════════ -->
+  <div class="card" id="form-card">
+
+    <!-- Header -->
+    <div class="header-banner">
+      <h1>📋 Faculty Feedback Form</h1>
+      <p>Your anonymous feedback helps improve the quality of education</p>
+    </div>
+
+    <!-- Session Meta -->
+    <div class="meta-strip">
+      <div class="meta-item">
+        <label>Department</label>
+        <span>Computer Science &amp; Engineering</span>
+      </div>
+      <div class="meta-item">
+        <label>Academic Year</label>
+        <span>2025 – 26</span>
+      </div>
+      <div class="meta-item">
+        <label>Session</label>
+        <span id="session-id" data-value="demo-session-001">Post-Lecture Evaluation</span>
+      </div>
+      <div class="meta-item">
+        <label>Type</label>
+        <span>Core Faculty Evaluation</span>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <form id="feedback-form" novalidate>
+      <div class="form-body">
+
+        <!-- Student details -->
+        <p class="section-title">🎓 Student Details</p>
+        <div class="field-row">
+          <div class="field">
+            <label for="student-name">Full Name <span style="color:#f44336">*</span></label>
+            <input type="text" id="student-name" name="studentName"
+                   placeholder="e.g. Priya Sharma" autocomplete="name" required />
+          </div>
+          <div class="field">
+            <label for="roll-no">Roll Number <span style="color:#f44336">*</span></label>
+            <input type="text" id="roll-no" name="rollNo"
+                   placeholder="e.g. CS22B001" required />
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Ratings -->
+        <p class="section-title">⭐ Rate the Following Criteria (1 = Poor · 5 = Excellent)</p>
+
+        <div class="rating-list">
+
+          <div class="rating-row" data-field="conceptClarity">
+            <span class="q-label">Concept Clarity — The instructor explained the core concepts clearly</span>
+            <div class="stars" id="stars-conceptClarity" role="group" aria-label="Concept Clarity rating">
+              <span class="star" title="1">★</span>
+              <span class="star" title="2">★</span>
+              <span class="star" title="3">★</span>
+              <span class="star" title="4">★</span>
+              <span class="star" title="5">★</span>
+            </div>
+            <span class="rating-val">–</span>
+          </div>
+
+          <div class="rating-row" data-field="lectureStructure">
+            <span class="q-label">Lecture Structure — The lecture was logically organized and easy to follow</span>
+            <div class="stars" role="group" aria-label="Lecture Structure rating">
+              <span class="star">★</span><span class="star">★</span>
+              <span class="star">★</span><span class="star">★</span><span class="star">★</span>
+            </div>
+            <span class="rating-val">–</span>
+          </div>
+
+          <div class="rating-row" data-field="subjectMastery">
+            <span class="q-label">Subject Mastery — The instructor demonstrated strong understanding of the topic</span>
+            <div class="stars" role="group" aria-label="Subject Mastery rating">
+              <span class="star">★</span><span class="star">★</span>
+              <span class="star">★</span><span class="star">★</span><span class="star">★</span>
+            </div>
+            <span class="rating-val">–</span>
+          </div>
+
+          <div class="rating-row" data-field="practicalUnderstanding">
+            <span class="q-label">Practical Understanding — Examples and demonstrations improved understanding</span>
+            <div class="stars" role="group" aria-label="Practical Understanding rating">
+              <span class="star">★</span><span class="star">★</span>
+              <span class="star">★</span><span class="star">★</span><span class="star">★</span>
+            </div>
+            <span class="rating-val">–</span>
+          </div>
+
+          <div class="rating-row" data-field="studentEngagement">
+            <span class="q-label">Student Engagement — The instructor encouraged questions and interaction</span>
+            <div class="stars" role="group" aria-label="Student Engagement rating">
+              <span class="star">★</span><span class="star">★</span>
+              <span class="star">★</span><span class="star">★</span><span class="star">★</span>
+            </div>
+            <span class="rating-val">–</span>
+          </div>
+
+          <div class="rating-row" data-field="lecturePace">
+            <span class="q-label">Lecture Pace — The pace allowed proper understanding of the material</span>
+            <div class="stars" role="group" aria-label="Lecture Pace rating">
+              <span class="star">★</span><span class="star">★</span>
+              <span class="star">★</span><span class="star">★</span><span class="star">★</span>
+            </div>
+            <span class="rating-val">–</span>
+          </div>
+
+          <div class="rating-row" data-field="learningOutcomeImpact">
+            <span class="q-label">Learning Outcome Impact — The lecture improved my ability to understand or apply the topic</span>
+            <div class="stars" role="group" aria-label="Learning Outcome Impact rating">
+              <span class="star">★</span><span class="star">★</span>
+              <span class="star">★</span><span class="star">★</span><span class="star">★</span>
+            </div>
+            <span class="rating-val">–</span>
+          </div>
+
+        </div><!-- /.rating-list -->
+
+        <div class="divider"></div>
+
+        <!-- Optional remark (fed into BERT) -->
+        <p class="section-title">💬 Written Feedback (Optional · Analysed by BERT)</p>
+
+        <div class="field">
+          <label for="remark">Remark / Comment</label>
+          <textarea id="remark" name="remark" rows="4"
+                    maxlength="500"
+                    placeholder="e.g. The lecture was very clear and the examples helped me understand the concept well…"></textarea>
+        </div>
+
+        <button type="submit" id="submit-btn" class="btn-submit">
+          <span class="btn-icon">📨</span> Submit Feedback
+        </button>
+
+        <p class="footer-note">🔒 Your response is completely anonymous and encrypted</p>
+
+      </div>
+    </form>
+  </div><!-- /#form-card -->
+
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       RESULT PANEL (shown after successful submission)
+  ═══════════════════════════════════════════════════════════════════════ -->
+  <div class="card" id="result-panel">
+    <div class="result-inner">
+
+      <div class="result-header">
+        <span class="tick">✅</span>
+        <div>
+          <h2>Thank You for Your Feedback!</h2>
+          <p style="font-size:0.85rem;color:var(--muted);margin-top:0.2rem">
+            Your input helps improve the quality of education.
+          </p>
+        </div>
+      </div>
+
+      <!-- Stats row -->
+      <div class="stats-row">
+        <div class="stat-chip">
+          <span class="chip-label">Avg. Rating</span>
+          <span class="chip-value" id="res-avg-rating">—</span>
+        </div>
+        <div class="stat-chip">
+          <span class="chip-label">Sentiment</span>
+          <span class="chip-value" id="res-sentiment">—</span>
+        </div>
+        <div class="stat-chip">
+          <span class="chip-label">Source</span>
+          <span class="chip-value" style="font-size:0.85rem" id="res-source">—</span>
+        </div>
+      </div>
+
+      <!-- Sentiment pie chart -->
+      <div class="sentiment-card" style="margin-top:1.25rem">
+        <div class="sc-title">
+          💬 Sentiment Analysis
+        </div>
+        <div class="chart-and-legend">
+          <div class="chart-wrap">
+            <canvas id="sentiment-chart"></canvas>
+            <div class="chart-center-label">
+              <span class="pct" id="center-pct">—</span>
+              <span class="lbl" id="center-lbl">—</span>
+            </div>
+          </div>
+          <div class="legend">
+            <div class="legend-item">
+              <div class="legend-left">
+                <span class="legend-dot pos"></span>
+                <span class="legend-name">Positive</span>
+              </div>
+              <span class="legend-pct" id="legend-pos-pct">—</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-left">
+                <span class="legend-dot neu"></span>
+                <span class="legend-name">Neutral</span>
+              </div>
+              <span class="legend-pct" id="legend-neu-pct">—</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-left">
+                <span class="legend-dot neg"></span>
+                <span class="legend-name">Negative</span>
+              </div>
+              <span class="legend-pct" id="legend-neg-pct">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /#result-panel -->
+
+</div><!-- /.wrapper -->
+</body>
+</html>
