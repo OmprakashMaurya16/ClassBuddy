@@ -2,10 +2,7 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import {
-<<<<<<< HEAD
   GraduationCap,
-=======
->>>>>>> frontend
   Lock,
   User,
   Eye,
@@ -13,10 +10,6 @@ import {
   AlertCircle,
 } from "lucide-react";
 import Footer from "../components/Footer";
-<<<<<<< HEAD
-=======
-import logo from "../assets/vit.png"
->>>>>>> frontend
 
 const Login = () => {
   const [role, setRole] = useState("Admin");
@@ -66,25 +59,17 @@ const Login = () => {
       <div className="w-full" style={{ maxWidth: "min(25rem, 75vw)" }}>
         <div className="text-center mb-6">
           <div className="flex justify-center mb-2">
-<<<<<<< HEAD
             <div className="bg-blue-100 p-3 rounded-lg">
               <GraduationCap color="#2563EB" />
             </div>
           </div>
-          
+
           <h1
             className="font-bold text-gray-800 leading-tight"
-=======
-            <img src={logo} alt="College Logo" className="w-36 h-15 object-cover" />
-          </div>
-          
-          <h1
-            className="font-bold text-[#170a89] leading-tight"
->>>>>>> frontend
             style={{ fontSize: "clamp(1rem, 2.5vw, 1.25rem)" }}>
             Vidyalankar Institute of Technology
           </h1>
-          
+
           <p
             className="text-gray-500 text-sm"
             style={{ fontSize: "clamp(0.75rem, 1.8vw, 0.875rem)" }}>
@@ -92,7 +77,6 @@ const Login = () => {
           </p>
         </div>
 
-        
         <div className="bg-white w-full max-w-md rounded-xl shadow-lg p-8 sm:p-8">
           <div className="text-center mb-4">
             <h2
@@ -125,7 +109,6 @@ const Login = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              
               <label
                 className="text-sm font-medium text-gray-700"
                 style={{ fontSize: "clamp(0.72rem, 1.6vw, 0.875rem)" }}>
@@ -149,7 +132,6 @@ const Login = () => {
             </div>
 
             <div>
-              
               <label
                 className="text-sm font-medium text-gray-700"
                 style={{ fontSize: "clamp(0.72rem, 1.6vw, 0.875rem)" }}>
@@ -160,7 +142,7 @@ const Login = () => {
                   size={18}
                   className="absolute left-3 top-3 text-gray-400"
                 />
-                
+
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
@@ -179,7 +161,6 @@ const Login = () => {
               </div>
 
               <div className="text-right mt-1">
-                
                 <button
                   type="button"
                   onClick={() => navigate("/forgot-password")}
@@ -192,13 +173,11 @@ const Login = () => {
 
             {error && (
               <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-2.5 rounded-lg">
-                
                 <AlertCircle size={16} className="shrink-0" />
                 {error}
               </div>
             )}
 
-            
             <button
               type="submit"
               disabled={loading}
@@ -208,7 +187,6 @@ const Login = () => {
             </button>
           </form>
 
-          
           <div
             className="text-center text-sm text-gray-500 mt-6"
             style={{ fontSize: "clamp(0.7rem, 1.5vw, 0.8rem)" }}>

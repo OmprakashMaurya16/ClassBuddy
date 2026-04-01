@@ -28,7 +28,6 @@ const authRoutes = require("./routes/auth.routes.js");
 const subjectRoutes = require("./routes/subject.routes.js");
 const adminRoutes = require("./routes/admin.routes.js");
 const sessionRoutes = require("./routes/sessions.routes.js");
-const sessionRoutes = require("./routes/session.routes.js");
 const feedbackRoutes = require("./routes/feedback.routes.js");
 const analyticsRoutes = require("./routes/analytics.routes.js");
 

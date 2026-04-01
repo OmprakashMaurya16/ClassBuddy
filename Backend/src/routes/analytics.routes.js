@@ -4,24 +4,22 @@ const {
   getTimeline,
   getAnalyticsById,
 } = require("../controllers/analytics.controller");
-const { authMiddleware } = require("../middlewares/auth.middleware.js");
+const {
+  authMiddleware,
+  authorizeRoles,
+} = require("../middlewares/auth.middleware.js");
 
 const router = express.Router();
 
-router.get("/", authMiddleware, authorizeRoles("Faculty"), getFacultyAnalytics);
+router.get("/", authMiddleware, authorizeRoles("Faculty"), getAnalytics);
 
-router.get(
-  "/timeline",
-  authMiddleware,
-  authorizeRoles("Faculty"),
-  getFacultyTimeline,
-);
+router.get("/timeline", authMiddleware, authorizeRoles("Faculty"), getTimeline);
 
 router.get(
   "/:id/analytics",
   authMiddleware,
   authorizeRoles("HOD"),
-  getFacultyAnalyticsById,
+  getAnalyticsById,
 );
 
 module.exports = router;
