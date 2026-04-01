@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   Lightbulb,
@@ -8,7 +8,6 @@ import {
   MessageSquareText,
   Timer,
   Target,
-  GraduationCap,
   CheckCircle,
   AlertCircle,
   Loader2,
@@ -72,7 +71,7 @@ const EMPTY_FORM = {
   ratings: EMPTY_RATINGS,
 };
 
-const validate = (form, facultyName, subject) => {
+const validate = (form, token) => {
   const errors = {};
 
   if (!form.studentName.trim()) errors.studentName = "Name is required.";
@@ -84,11 +83,7 @@ const validate = (form, facultyName, subject) => {
     errors.rollNo =
       "Roll No. must be alphanumeric (no spaces or special characters).";
 
-  if (!facultyName)
-    errors.faculty = "Faculty name is missing from the QR link. Please rescan.";
-
-  if (!subject)
-    errors.subject = "Subject is missing from the QR link. Please rescan.";
+  if (!token) errors.session = "Session token missing. Please rescan the QR.";
 
   QUESTIONS.forEach((q) => {
     if (form.ratings[q.key] === null)
@@ -101,7 +96,7 @@ const validate = (form, facultyName, subject) => {
 const RatingButtons = ({ questionKey, value, onChange, error }) => (
   <div>
     <div className="flex gap-2 sm:gap-3 mt-3">
-      {[0, 1, 2, 3, 4].map((n) => (
+      {[1, 2, 3, 4, 5].map((n) => (
         <button
           key={n}
           type="button"
@@ -195,15 +190,49 @@ const SuccessScreen = ({ facultyName, subject }) => (
 
 const FeedbackForm = () => {
   const [searchParams] = useSearchParams();
-  const facultyName = searchParams.get("faculty") ?? "";
-  const subject = searchParams.get("subject") ?? "";
-  const sessionId = searchParams.get("sessionId") ?? "";
+  const token = searchParams.get("token") ?? "";
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [apiError, setApiError] = useState("");
+  const [sessionMeta, setSessionMeta] = useState({
+    facultyName: "",
+    subject: "",
+  });
+  const [sessionLoading, setSessionLoading] = useState(true);
+
+  useEffect(() => {
+    const validateSession = async () => {
+      if (!token) {
+        setApiError("Invalid QR link. Please rescan the QR code.");
+        setSessionLoading(false);
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/sessions/${encodeURIComponent(token)}`);
+        const payload = await res.json();
+
+        if (!res.ok) {
+          setApiError(payload?.message || "Session is invalid or expired.");
+          return;
+        }
+
+        setSessionMeta({
+          facultyName: payload?.data?.faculty?.fullName || "",
+          subject: payload?.data?.subject?.name || "",
+        });
+      } catch {
+        setApiError("Unable to validate QR session. Please try again.");
+      } finally {
+        setSessionLoading(false);
+      }
+    };
+
+    validateSession();
+  }, [token]);
 
   const handleInput = (field, value) => {
     setForm((f) => ({ ...f, [field]: value }));
@@ -220,7 +249,7 @@ const FeedbackForm = () => {
     e.preventDefault();
     setApiError("");
 
-    const errs = validate(form, facultyName, subject);
+    const errs = validate(form, token);
     if (Object.keys(errs).length) {
       setErrors(errs);
 
@@ -232,14 +261,11 @@ const FeedbackForm = () => {
     setLoading(true);
 
     const payload = {
-      sessionId,
-      facultyName,
-      subject,
+      token,
       studentName: form.studentName.trim(),
       rollNo: form.rollNo.trim().toUpperCase(),
-      ratings: form.ratings,
-      remarks: form.remarks.trim(),
-      submittedAt: new Date().toISOString(),
+      rating: form.ratings,
+      remark: form.remarks.trim(),
     };
 
     try {
@@ -263,7 +289,12 @@ const FeedbackForm = () => {
   };
 
   if (submitted)
-    return <SuccessScreen facultyName={facultyName} subject={subject} />;
+    return (
+      <SuccessScreen
+        facultyName={sessionMeta.facultyName}
+        subject={sessionMeta.subject}
+      />
+    );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -371,31 +402,30 @@ const FeedbackForm = () => {
               </div>
             </div>
 
-            {(facultyName || subject) && (
+            {(sessionMeta.facultyName || sessionMeta.subject) && (
               <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-50">
-                {facultyName && (
+                {sessionMeta.facultyName && (
                   <div className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 rounded-full px-3 py-1">
-                    <GraduationCap size={12} className="text-indigo-500" />
                     <span
                       className="text-indigo-700 font-medium"
                       style={{ fontSize: "clamp(0.7rem, 2.5vw, 0.78rem)" }}>
-                      {facultyName}
+                      {sessionMeta.facultyName}
                     </span>
                   </div>
                 )}
-                {subject && (
+                {sessionMeta.subject && (
                   <div className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 rounded-full px-3 py-1">
                     <span
                       className="text-indigo-700 font-medium"
                       style={{ fontSize: "clamp(0.7rem, 2.5vw, 0.78rem)" }}>
-                      {subject}
+                      {sessionMeta.subject}
                     </span>
                   </div>
                 )}
               </div>
             )}
 
-            {(errors.faculty || errors.subject) && (
+            {(errors.session || apiError) && (
               <div className="mt-3 flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
                 <AlertCircle
                   size={15}
@@ -404,7 +434,7 @@ const FeedbackForm = () => {
                 <p
                   className="text-red-600"
                   style={{ fontSize: "clamp(0.72rem, 2.6vw, 0.8rem)" }}>
-                  {errors.faculty || errors.subject}
+                  {errors.session || apiError}
                 </p>
               </div>
             )}
@@ -453,7 +483,7 @@ const FeedbackForm = () => {
           <div className="pb-6">
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || sessionLoading || !token || !!apiError}
               className="w-full flex items-center justify-center gap-2.5 py-4 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-700 active:scale-[0.98] transition-all shadow-lg shadow-indigo-200 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
               style={{ fontSize: "clamp(0.95rem, 3.5vw, 1.05rem)" }}>
               {loading ? (

@@ -13,19 +13,11 @@ import { useAuth } from "../auth/AuthContext";
 import Footer from "../components/Footer";
 import Header from "../components/Header";
 
-const MOCK_SUBJECTS = [
-  { _id: "sub1", name: "Structural Analysis II", code: "CE401", section: "A" },
-  { _id: "sub2", name: "Fluid Mechanics Lab", code: "CE302", section: "B" },
-  { _id: "sub3", name: "Thermodynamics", code: "ME301", section: "A" },
-];
-
-const FacultyDashboard = () => {};
-
 const GenerateQR = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [subjects, setSubjects] = useState(MOCK_SUBJECTS);
+  const [subjects, setSubjects] = useState([]);
   const [subjectId, setSubjectId] = useState("");
   const [lectureDate, setLectureDate] = useState(
     () => new Date().toISOString().split("T")[0],
@@ -35,6 +27,34 @@ const GenerateQR = () => {
 
   const [error, setError] = useState("");
   const [downloaded, setDownloaded] = useState(false);
+
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        const token = user?.token;
+        const res = await fetch("/api/subjects/mine", {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          credentials: "include",
+        });
+
+        const payload = await res.json();
+        if (!res.ok) {
+          setSubjects([]);
+          return;
+        }
+
+        setSubjects(Array.isArray(payload?.data) ? payload.data : []);
+      } catch {
+        setSubjects([]);
+      }
+    };
+
+    if (user?.token) {
+      fetchSubjects();
+    }
+  }, [user?.token]);
 
   const getInitials = (name = "") => {
     return name
@@ -68,20 +88,21 @@ const GenerateQR = () => {
       const token = JSON.parse(
         sessionStorage.getItem("vit_user") ?? "{}",
       )?.token;
-      const res = await fetch("/api/faculty/sessions/generate", {
+      const res = await fetch("/api/sessions/generate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ subjectId, date: lectureDate }),
+        credentials: "include",
       });
-      const data = await res.json();
+      const payload = await res.json();
       if (!res.ok) {
-        setError(data?.message || "Failed to generate QR.");
+        setError(payload?.message || "Failed to generate QR.");
         return;
       }
-      setQrData(data);
+      setQrData(payload?.data || null);
     } catch {
       setError("Network error. Please try again.");
     } finally {

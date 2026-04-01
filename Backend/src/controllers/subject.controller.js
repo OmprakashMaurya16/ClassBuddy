@@ -32,6 +32,20 @@ const addSubjects = asyncHandler(async (req, res) => {
   sendResponse(res, 200, "Subjects added successfully", subject);
 });
 
+const getMySubjects = asyncHandler(async (req, res) => {
+  const facultyId = req.user.id;
+
+  const subjects = await Subject.find({
+    faculty: facultyId,
+    isActive: true,
+  })
+    .sort({ createdAt: -1 })
+    .select("name code semester department");
+
+  return sendResponse(res, 200, "Subjects fetched successfully", subjects);
+});
+
 module.exports = {
   addSubjects,
+  getMySubjects,
 };

@@ -1,37 +1,61 @@
 const crypto = require("crypto");
 const mongoose = require("mongoose");
+const QRCode = require("qrcode");
 const Session = require("../models/session.model.js");
+const Subject = require("../models/subject.model.js");
 const ApiError = require("../utils/api.error.js");
 const asyncHandler = require("../utils/async.handler.js");
 const sendResponse = require("../utils/response.helper.js");
 
 const generateSession = asyncHandler(async (req, res) => {
-  const { subjectId } = req.body;
+  const { subjectId, date } = req.body;
   const facultyId = req.user.id;
 
   if (!subjectId) {
     throw new ApiError(400, "Subject is required");
   }
 
+  const subject = await Subject.findOne({
+    _id: subjectId,
+    faculty: facultyId,
+    isActive: true,
+  });
+
+  if (!subject) {
+    throw new ApiError(404, "Subject not found for this faculty");
+  }
+
   const qrToken = crypto.randomBytes(16).toString("hex");
 
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+  const lectureDate = date ? new Date(date) : new Date();
 
   const session = await Session.create({
     faculty: facultyId,
     subject: subjectId,
-    date: new Date(),
+    date: lectureDate,
     qrToken,
     expiresAt,
   });
 
-  const feedbackUrl = `${process.env.FRONTEND_URL}/feedback?token=${qrToken}`;
+  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+  const feedbackUrl = `${frontendUrl}/feedback?token=${encodeURIComponent(qrToken)}`;
+  const qrDataUrl = await QRCode.toDataURL(feedbackUrl, {
+    width: 512,
+    margin: 2,
+  });
 
   return sendResponse(res, 201, "Session created successfully", {
     sessionId: session._id,
     qrToken,
     feedbackUrl,
+    qrDataUrl,
     expiresAt,
+    subject: {
+      _id: subject._id,
+      name: subject.name,
+      code: subject.code,
+    },
   });
 });
 
