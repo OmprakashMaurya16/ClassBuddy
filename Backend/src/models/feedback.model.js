@@ -90,6 +90,11 @@ const feedbackSchema = new mongoose.Schema(
       lowercase: true,
     },
 
+    rating: {
+      type: ratingSchema,
+      required: true,
+    },
+
     averageRating: {
       type: Number,
       min: 1,
@@ -115,9 +120,13 @@ const feedbackSchema = new mongoose.Schema(
 
 feedbackSchema.index({ session: 1, rollNo: 1 }, { unique: true });
 
-feedbackSchema.pre("save", function (next) {
+feedbackSchema.pre("validate", function (next) {
   const values = Object.values(this.rating || {});
-  this.avgRating = values.reduce((sum, v) => sum + v, 0) / values.length;
+
+  if (values.length) {
+    const total = values.reduce((sum, value) => sum + value, 0);
+    this.averageRating = Math.round((total / values.length) * 100) / 100;
+  }
 
   next();
 });

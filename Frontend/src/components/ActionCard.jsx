@@ -1,6 +1,7 @@
 import React from "react";
 
 const ActionCard = ({
+  icon: Icon,
   title,
   description,
   buttonText,

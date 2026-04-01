@@ -2,7 +2,21 @@ const Feedback = require("../models/feedback.model.js");
 const Session = require("../models/session.model.js");
 const ApiError = require("../utils/api.error.js");
 const asyncHandler = require("../utils/async.handler.js");
+const { getSentimentFromML } = require("../utils/ml.client.js");
 const sendResponse = require("../utils/response.helper.js");
+
+const deriveSentimentFromRating = (rating = {}) => {
+  const values = Object.values(rating)
+    .map(Number)
+    .filter((v) => !Number.isNaN(v));
+  const avg = values.length
+    ? values.reduce((sum, value) => sum + value, 0) / values.length
+    : 0;
+
+  if (avg >= 3.5) return "Positive";
+  if (avg >= 2.5) return "Neutral";
+  return "Negative";
+};
 
 const submitFeedback = asyncHandler(async (req, res) => {
   const { token, studentName, rollNo, rating, remark } = req.body;
@@ -43,49 +57,49 @@ const submitFeedback = asyncHandler(async (req, res) => {
 
   const existing = await Feedback.findOne({
     session: session._id,
-    rollNo: rollNo.trim().toUpperCase(),
+    rollNo: rollNo.trim().toLowerCase(),
   });
 
   if (existing) {
     throw new ApiError(409, "Feedback already submitted");
   }
 
-  const feedback = await Feedback.create({
+  const mlInput = {
+    studentName: studentName.trim().toLowerCase(),
+    rollNo: rollNo.trim().toLowerCase(),
+    sessionId: String(session._id),
+    ratings: {
+      conceptClarity: rating.conceptClarity,
+      lectureStructure: rating.lectureStructure,
+      subjectMastery: rating.subjectMastery,
+      practicalUnderstanding: rating.practicalUnderstanding,
+      studentEngagement: rating.studentEngagement,
+      lecturePace: rating.lecturePace,
+      learningOutcomeImpact: rating.learningOutcomeImpact,
+    },
+    remark: remark || "",
+  };
+
+  let sentiment;
+  try {
+    sentiment = await getSentimentFromML(mlInput);
+  } catch (error) {
+    console.error("ML sentiment failed, using rating fallback:", error.message);
+    sentiment = deriveSentimentFromRating(rating);
+  }
+
+  await Feedback.create({
     session: session._id,
     faculty: session.faculty,
     subject: session.subject,
     studentName: studentName.trim().toLowerCase(),
-    rollNo: rollNo.trim().toUpperCase(),
+    rollNo: rollNo.trim().toLowerCase(),
     rating,
+    sentiment,
     remark: remark || "",
   });
 
-  process.nextTick(async () => {
-    try {
-      const mlInput = {
-        ratings: {
-          conceptClarity: rating.conceptClarity,
-          lectureStructure: rating.lectureStructure,
-          subjectMastery: rating.subjectMastery,
-          practicalUnderstanding: rating.practicalUnderstanding,
-          studentEngagement: rating.studentEngagement,
-          lecturePace: rating.lecturePace,
-          learningOutcomeImpact: rating.learningOutcomeImpact,
-        },
-        remark: remark || "",
-      };
-
-      const sentiment = await getSentimentFromML(mlInput); //ml model
-
-      await Feedback.findByIdAndUpdate(feedback._id, {
-        sentiment,
-      });
-    } catch (error) {
-      console.error("ML sentiment failed:", error);
-    }
-
-    return sendResponse(res, 201, "Feedback submitted successfully");
-  });
+  return sendResponse(res, 201, "Feedback submitted successfully");
 });
 
 module.exports = {

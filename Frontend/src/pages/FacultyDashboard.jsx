@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GraduationCap, QrCode, BarChart2, History } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
@@ -6,38 +6,11 @@ import Footer from "../components/Footer";
 import ActionCard from "../components/ActionCard";
 import Header from "../components/Header";
 
-const MOCK_SESSIONS = [
-  {
-    _id: "s1",
-    date: "Oct 24, 2023",
-    subject: "Structural Analysis II",
-    section: "A",
-    responses: 42,
-    status: "Completed",
-  },
-  {
-    _id: "s2",
-    date: "Oct 22, 2023",
-    subject: "Fluid Mechanics Lab",
-    section: "B",
-    responses: 18,
-    status: "Completed",
-  },
-  {
-    _id: "s3",
-    date: "Oct 19, 2023",
-    subject: "Thermodynamics",
-    section: "A",
-    responses: 35,
-    status: "Completed",
-  },
-];
-
 const StatusBadge = ({ status }) => {
   const map = {
     Completed: "bg-green-50 text-green-600 border-green-200",
     Active: "bg-blue-50 text-blue-600 border-blue-200",
-    Pending: "bg-yellow-50 text-yellow-600 border-yellow-200",
+    Expired: "bg-yellow-50 text-yellow-600 border-yellow-200",
   };
   return (
     <span
@@ -51,8 +24,54 @@ const FacultyDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [recentSessions, setRecentSessions] = useState(MOCK_SESSIONS);
-  const [loading, setLoading] = useState(false);
+  const [recentSessions, setRecentSessions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRecentSessions = async () => {
+      setLoading(true);
+      try {
+        const token = user?.token;
+        const res = await fetch("/api/sessions/mine?limit=8", {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          credentials: "include",
+        });
+
+        const payload = await res.json();
+
+        if (!res.ok) {
+          setRecentSessions([]);
+          return;
+        }
+
+        const sessions = Array.isArray(payload?.data) ? payload.data : [];
+
+        setRecentSessions(
+          sessions.map((session) => ({
+            ...session,
+            date: new Date(session.date).toLocaleDateString("en-US", {
+              month: "short",
+              day: "2-digit",
+              year: "numeric",
+            }),
+          })),
+        );
+      } catch {
+        setRecentSessions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user?.token) {
+      fetchRecentSessions();
+    } else {
+      setRecentSessions([]);
+      setLoading(false);
+    }
+  }, [user?.token]);
 
   const getInitials = (name = "") => {
     return name

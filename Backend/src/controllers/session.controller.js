@@ -1,10 +1,11 @@
 const crypto = require("crypto");
+const mongoose = require("mongoose");
 const Session = require("../models/session.model.js");
 const ApiError = require("../utils/api.error.js");
 const asyncHandler = require("../utils/async.handler.js");
 const sendResponse = require("../utils/response.helper.js");
 
-const generateSession = asyncHandler(async () => {
+const generateSession = asyncHandler(async (req, res) => {
   const { subjectId } = req.body;
   const facultyId = req.user.id;
 
@@ -12,7 +13,7 @@ const generateSession = asyncHandler(async () => {
     throw new ApiError(400, "Subject is required");
   }
 
-  const sessionId = crypto.randomBytes(16).toString("hex");
+  const qrToken = crypto.randomBytes(16).toString("hex");
 
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
@@ -32,6 +33,75 @@ const generateSession = asyncHandler(async () => {
     feedbackUrl,
     expiresAt,
   });
+});
+
+const getFacultySessions = asyncHandler(async (req, res) => {
+  const facultyId = req.user.id;
+  const limit = Math.min(Number(req.query.limit) || 10, 50);
+
+  const sessions = await Session.aggregate([
+    {
+      $match: {
+        faculty: new mongoose.Types.ObjectId(facultyId),
+      },
+    },
+    { $sort: { date: -1 } },
+    { $limit: limit },
+    {
+      $lookup: {
+        from: "subjects",
+        localField: "subject",
+        foreignField: "_id",
+        as: "subjectInfo",
+      },
+    },
+    {
+      $lookup: {
+        from: "feedbacks",
+        localField: "_id",
+        foreignField: "session",
+        as: "feedbackDocs",
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        date: 1,
+        expiresAt: 1,
+        isActive: 1,
+        responses: { $size: "$feedbackDocs" },
+        subject: {
+          _id: { $arrayElemAt: ["$subjectInfo._id", 0] },
+          name: { $arrayElemAt: ["$subjectInfo.name", 0] },
+          code: { $arrayElemAt: ["$subjectInfo.code", 0] },
+        },
+      },
+    },
+  ]);
+
+  const now = Date.now();
+
+  const formatted = sessions.map((session) => {
+    const isExpired = new Date(session.expiresAt).getTime() < now;
+
+    let status = "Completed";
+    if (session.isActive && !isExpired) {
+      status = "Active";
+    } else if (session.isActive && isExpired) {
+      status = "Expired";
+    }
+
+    return {
+      _id: session._id,
+      date: session.date,
+      subject: session.subject?.name || "Unknown Subject",
+      subjectCode: session.subject?.code || "",
+      responses: session.responses,
+      status,
+    };
+  });
+
+  return sendResponse(res, 200, "Faculty sessions", formatted);
 });
 
 const validateSession = asyncHandler(async (req, res) => {
@@ -84,4 +154,5 @@ module.exports = {
   generateSession,
   validateSession,
   closeSession,
+  getFacultySessions,
 };
