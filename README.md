@@ -207,7 +207,7 @@ ClassEcho/
 
 - Flask
 - Transformers (`nlptown/bert-base-multilingual-uncased-sentiment` pipeline)
-- PyTorch
+- PyTorch (optional, for running the BERT pipeline)
 - PyMongo
 
 ## API Documentation

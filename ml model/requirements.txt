@@ -1,8 +1,4 @@
---only-binary=:all:
-
 flask==3.0.3
-pymongo==4.7.3
+pymongo==4.15.5
 python-dotenv==1.0.1
 transformers==4.41.2
-torch>=2.9.0
-scipy==1.11.4
