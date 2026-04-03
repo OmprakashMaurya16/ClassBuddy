@@ -45,7 +45,34 @@ const getMySubjects = asyncHandler(async (req, res) => {
   return sendResponse(res, 200, "Subjects fetched successfully", subjects);
 });
 
+const getSubjectsByFacultyIdForHod = asyncHandler(async (req, res) => {
+  const { facultyId } = req.params;
+  const hodDepartment = req.user?.department;
+
+  const faculty = await User.findById(facultyId).select(
+    "role department isActive",
+  );
+
+  if (!faculty || !faculty.isActive || faculty.role !== "Faculty") {
+    throw new ApiError(404, "Faculty not found");
+  }
+
+  if (!hodDepartment || faculty.department !== hodDepartment) {
+    throw new ApiError(403, "Forbidden");
+  }
+
+  const subjects = await Subject.find({
+    faculty: faculty._id,
+    isActive: true,
+  })
+    .sort({ createdAt: -1 })
+    .select("name code semester department");
+
+  return sendResponse(res, 200, "Subjects fetched successfully", subjects);
+});
+
 module.exports = {
   addSubjects,
   getMySubjects,
+  getSubjectsByFacultyIdForHod,
 };

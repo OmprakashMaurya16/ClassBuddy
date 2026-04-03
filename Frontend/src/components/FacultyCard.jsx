@@ -51,9 +51,10 @@ const FacultyCard = ({
   const subjectNames = (faculty.subjects ?? []).map((s) => s.name);
   const preview = subjectNames.slice(0, 2).join(", ");
   const hasMore = subjectNames.length > 2;
+  const hasSubjects = subjectNames.length > 0;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5 flex flex-col gap-3 hover:shadow-md transition-shadow duration-200 w-full">
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5 flex flex-col gap-3 hover:shadow-md transition-shadow duration-200 w-full h-full">
       <div className="flex items-start justify-between gap-2">
         <div
           className={`rounded-full flex items-center justify-center font-bold shrink-0 ${colours.bg} ${colours.text}`}
@@ -125,13 +126,13 @@ const FacultyCard = ({
             ? "Prof & HOD"
             : (faculty.designation ?? faculty.role)}
         </p>
-        {subjectNames.length > 0 && (
-          <p className="truncate">
-            <span className="text-gray-400">Subj: </span>
-            {preview}
-            {hasMore ? ", …" : ""}
-          </p>
-        )}
+        <p
+          className={`truncate ${hasSubjects ? "" : "opacity-0 select-none"}`}
+          aria-hidden={!hasSubjects}>
+          <span className="text-gray-400">Subj: </span>
+          {hasSubjects ? preview : "—"}
+          {hasSubjects && hasMore ? ", …" : ""}
+        </p>
       </div>
       {showViewDetails && (
         <button

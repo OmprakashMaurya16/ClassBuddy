@@ -9,67 +9,6 @@ import Header from "../components/Header";
 
 const PAGE_SIZE = 12;
 
-const MOCK_STATS = { totalFaculty: 48, deptAvgScore: 4.82 };
-
-const mk = (id, name, desig, subjects, rating) => ({
-  _id: String(id),
-  fullName: name,
-  department: "INFT",
-  role: "Faculty",
-  designation: desig,
-  avgRating: rating,
-  subjects: subjects.map((s, i) => ({ _id: `s${id}${i}`, name: s })),
-});
-
-const MOCK_FACULTY = [
-  mk(
-    1,
-    "Dr. Ananya Sharma",
-    "Associate Professor",
-    ["CC, Machine Learning, Data Feature Engineering"],
-    4.9,
-  ),
-  mk(2, "Prof. Rahul Jha", "Head of Lab", ["Database Management Systems"], 4.7),
-  mk(
-    3,
-    "Dr. Vikram Kapoor",
-    "Assistant Professor",
-    ["Artificial Intelligence"],
-    4.8,
-  ),
-  mk(4, "Ms. Sneha Mehra", "Lecturer", ["Web Technologies"], 4.5),
-  mk(5, "Dr. Arjun Mehta", "Senior Professor", ["Network Security"], 4.9),
-  mk(
-    6,
-    "Ms. Priya Lakshmi",
-    "Assistant Professor",
-    ["Data Structures & Algo"],
-    4.6,
-  ),
-  mk(
-    7,
-    "Mr. Rohan Tyagi",
-    "Assistant Professor",
-    ["Mobile App Development"],
-    4.4,
-  ),
-  mk(8, "Dr. Sameer Verma", "Dean of Research", ["Machine Learning"], 5.0),
-  mk(9, "Ms. Kavita Das", "Associate Professor", ["Software Engineering"], 4.7),
-  mk(10, "Mr. Nitin Malhotra", "Lecturer", ["Cyber Laws & Ethics"], 4.8),
-  mk(11, "Dr. Shalini Yadav", "Professor", ["Human Computer Interaction"], 4.9),
-  mk(12, "Mr. Amit Bansal", "Assistant Professor", ["Operating Systems"], 4.6),
-  mk(
-    13,
-    "Dr. Reena Kulkarni",
-    "Senior Professor",
-    ["Distributed Systems"],
-    4.8,
-  ),
-  mk(14, "Ms. Pooja Nair", "Lecturer", ["Computer Graphics"], 4.3),
-  mk(15, "Prof. Suresh Pai", "Professor", ["Theory of Computation"], 4.7),
-  mk(16, "Dr. Kavya Iyer", "Assistant Professor", ["Advanced Algorithms"], 4.5),
-];
-
 const RatingBadge = ({ rating }) => (
   <div className="flex items-center gap-1 bg-indigo-50 border border-indigo-100 rounded-lg px-2 py-1">
     <Star size={11} className="text-indigo-500 fill-indigo-500" />
@@ -82,7 +21,7 @@ const RatingBadge = ({ rating }) => (
 );
 
 const HodFacultyCard = ({ faculty, onViewDetails }) => (
-  <div className="relative flex flex-col">
+  <div className="relative flex flex-col h-full">
     <div className="absolute top-3 right-3 z-10">
       <RatingBadge rating={faculty.avgRating} />
     </div>
@@ -100,8 +39,8 @@ const HodDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [stats, setStats] = useState(MOCK_STATS);
-  const [allFaculty, setAllFaculty] = useState(MOCK_FACULTY);
+  const [stats, setStats] = useState({ totalFaculty: 0, deptAvgScore: 0 });
+  const [allFaculty, setAllFaculty] = useState([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -115,6 +54,47 @@ const HodDashboard = () => {
   useEffect(() => {
     setPage(1);
   }, [search]);
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      if (!user?.token) return;
+
+      setLoading(true);
+      try {
+        const res = await fetch("/api/hod/dashboard", {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+          credentials: "include",
+        });
+
+        const payload = await res.json();
+        if (!res.ok) {
+          setStats({ totalFaculty: 0, deptAvgScore: 0 });
+          setAllFaculty([]);
+          return;
+        }
+
+        const nextStats = payload?.data?.stats || {};
+        const nextFaculty = Array.isArray(payload?.data?.faculties)
+          ? payload.data.faculties
+          : [];
+
+        setStats({
+          totalFaculty: Number(nextStats.totalFaculty || 0),
+          deptAvgScore: Number(nextStats.deptAvgScore || 0),
+        });
+        setAllFaculty(nextFaculty);
+      } catch {
+        setStats({ totalFaculty: 0, deptAvgScore: 0 });
+        setAllFaculty([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboard();
+  }, [user?.token]);
 
   const handleViewDetails = (faculty) => {
     navigate(`/hod/faculty/${faculty._id}/analytics`);

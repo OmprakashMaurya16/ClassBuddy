@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   ChevronLeft,
   Star,
@@ -36,6 +36,9 @@ const getInitials = (name = "") =>
 const FacultyAnalytics = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { id } = useParams();
+
+  const isHodView = user?.role === "HOD" && Boolean(id);
 
   const [subjects, setSubjects] = useState([
     { _id: "overall", name: "Overall", code: "" },
@@ -55,23 +58,28 @@ const FacultyAnalytics = () => {
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
-        const res = await fetch("/api/subjects/mine", {
-          headers: {
-            ...(user?.token ? { Authorization: `Bearer ${user.token}` } : {}),
+        const res = await fetch(
+          isHodView ? `/api/subjects/faculty/${id}` : "/api/subjects/mine",
+          {
+            headers: {
+              ...(user?.token ? { Authorization: `Bearer ${user.token}` } : {}),
+            },
+            credentials: "include",
           },
-          credentials: "include",
-        });
+        );
         const payload = await res.json();
 
         if (!res.ok) return;
 
         const list = Array.isArray(payload?.data) ? payload.data : [];
         setSubjects([{ _id: "overall", name: "Overall", code: "" }, ...list]);
-      } catch {}
+      } catch {
+        // ignore
+      }
     };
 
     if (user?.token) fetchSubjects();
-  }, [user?.token]);
+  }, [id, isHodView, user?.token]);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -87,12 +95,20 @@ const FacultyAnalytics = () => {
           ...(user?.token ? { Authorization: `Bearer ${user.token}` } : {}),
         };
 
+        const analyticsUrl = isHodView
+          ? `/api/analytics/faculty/${id}/analytics${subjectQuery}`
+          : `/api/analytics/faculty${subjectQuery}`;
+
+        const timelineUrl = isHodView
+          ? `/api/analytics/faculty/${id}/timeline${subjectQuery}`
+          : `/api/analytics/faculty/timeline${subjectQuery}`;
+
         const [analyticsRes, timelineRes] = await Promise.all([
-          fetch(`/api/analytics/faculty${subjectQuery}`, {
+          fetch(analyticsUrl, {
             headers,
             credentials: "include",
           }),
-          fetch(`/api/analytics/faculty/timeline${subjectQuery}`, {
+          fetch(timelineUrl, {
             headers,
             credentials: "include",
           }),
@@ -182,7 +198,7 @@ const FacultyAnalytics = () => {
     if (user?.token) {
       fetchAnalytics();
     }
-  }, [activeSubj, filter, user?.token]);
+  }, [activeSubj, filter, id, isHodView, user?.token]);
 
   const activeSubjectLabel =
     subjects.find((s) => s._id === activeSubj)?.name ?? "Overall";

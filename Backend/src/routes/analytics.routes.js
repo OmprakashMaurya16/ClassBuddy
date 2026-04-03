@@ -3,6 +3,7 @@ const {
   getAnalytics,
   getTimeline,
   getAnalyticsById,
+  getTimelineById,
 } = require("../controllers/analytics.controller");
 const {
   authMiddleware,
@@ -20,6 +21,13 @@ router.get(
   authMiddleware,
   authorizeRoles("HOD"),
   getAnalyticsById,
+);
+
+router.get(
+  "/:id/timeline",
+  authMiddleware,
+  authorizeRoles("HOD"),
+  getTimelineById,
 );
 
 module.exports = router;

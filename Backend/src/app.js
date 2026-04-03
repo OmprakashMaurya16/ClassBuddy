@@ -30,6 +30,7 @@ const adminRoutes = require("./routes/admin.routes.js");
 const sessionRoutes = require("./routes/sessions.routes.js");
 const feedbackRoutes = require("./routes/feedback.routes.js");
 const analyticsRoutes = require("./routes/analytics.routes.js");
+const hodRoutes = require("./routes/hod.routes.js");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/subjects", subjectRoutes);
@@ -37,6 +38,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/analytics/faculty", analyticsRoutes);
+app.use("/api/hod", hodRoutes);
 
 app.use((err, req, res, next) => {
   if (err.name === "ApiError") {

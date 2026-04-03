@@ -2,6 +2,7 @@ const express = require("express");
 const {
   addSubjects,
   getMySubjects,
+  getSubjectsByFacultyIdForHod,
 } = require("../controllers/subject.controller.js");
 const {
   authMiddleware,
@@ -18,5 +19,12 @@ router.post(
 );
 
 router.get("/mine", authMiddleware, authorizeRoles("Faculty"), getMySubjects);
+
+router.get(
+  "/faculty/:facultyId",
+  authMiddleware,
+  authorizeRoles("HOD"),
+  getSubjectsByFacultyIdForHod,
+);
 
 module.exports = router;
