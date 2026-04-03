@@ -361,3 +361,8 @@ Note: `ml model/test_submissions.py` targets `http://127.0.0.1:5000` by default,
 - Install Python deps from `ml model/requirements.txt`.
 - Provide `MONGO_URI` / `DB_NAME` if you want persistence for the ML service’s own stats pages.
 - Expose the service and set backend `ML_SERVICE_URL` accordingly.
+
+Render notes:
+
+- This repo includes `.python-version` to pin Python to `3.12` (avoids source builds for `tokenizers`).
+- Recommended start command: `gunicorn app:app` (set Render Root Directory to `ml model`).

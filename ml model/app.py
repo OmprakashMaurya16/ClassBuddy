@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, render_template
 from datetime import datetime
 import threading
 import logging
+import os
 
 from config import MONGO_URI, DB_NAME, SECRET_KEY
 
@@ -220,4 +221,6 @@ def status():
     })
 
 if __name__ == "__main__":
-    app.run(debug=True, port=3000, use_reloader=False)
+    port = int(os.getenv("PORT", "3000"))
+    debug = os.getenv("FLASK_DEBUG", "0") == "1"
+    app.run(host="0.0.0.0", debug=debug, port=port, use_reloader=False)
